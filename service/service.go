@@ -99,7 +99,8 @@ func (s *Service) mainLoop() error {
 	sort.Slice(serviceStatusArray, func(i, j int) bool {
 		return serviceStatusArray[i].Id < serviceStatusArray[j].Id
 	})
-	// array
+
+	// array for already aggregated serviceIDs
 	var usedIDs []int
 	for _, serviceStatus := range serviceStatusArray {
 		// check if this service ID was already used
@@ -109,29 +110,28 @@ func (s *Service) mainLoop() error {
 		} else {
 			usedIDs = append(usedIDs, serviceStatus.Id)
 		}
+
+		// fetch last aggregated record for this serviceID,  this is necessery as you might wanna merge the new records with the last one
 		lastAggregatedRecord, err := s.dbClient.ES_GetAggregatedServiceStatusByID(from, time.Now(), serviceStatus.Id)
 		if err != nil {
 			s.logger.LogError(err, "failed to get lastAggregatedRecord")
 		}
-		// get statuses with same serviceID and convert them to AggregatedStatus
+
+		// get all ServiceStatus with same serviceID and convert them to AggregatedServiceStatus
 		toAgregate := statusArrayToAggregatedStatusArray(getAllStatusesByID(serviceStatus.Id, serviceStatusArray))
 		sort.Slice(toAgregate, func(i, j int) bool {
 			return toAgregate[i].TimestampFrom.Before(toAgregate[j].TimestampFrom)
 		})
-		// insert last record at the start of the array
-		toAgregate = append([]*status.AgregatedServiceStatus{lastAggregatedRecord}, toAgregate...)
 
-		for i, item := range toAgregate {
-			s.logger.Log("toAggregate item %d, content %s", i, item.String())
-		}
+		// insert the last aggregated record at the start of the array
+		toAgregate = append([]*status.AgregatedServiceStatus{lastAggregatedRecord}, toAgregate...)
 
 		// finally do the data aggregation
 		aggregatedStatusArray := agregator.AggregateStatuses(toAgregate)
 		s.logger.Log("aggregated %d records into %d", len(toAgregate), len(aggregatedStatusArray))
 
 		// save aggregated data back to db
-		for i, item := range aggregatedStatusArray {
-			s.logger.Log("DONE: aggregated item %d, content %s", i, item.String())
+		for _, item := range aggregatedStatusArray {
 			err = s.dbClient.ES_SaveAggregatedServiceStatus(item)
 			if err != nil {
 				s.logger.LogError(err, "failed to save aggregatedStatus")
@@ -139,10 +139,10 @@ func (s *Service) mainLoop() error {
 		}
 	}
 
-	// clear aggregated records from db
+	// clear service_status records from db, we already aggregated them and saved ass aggregated_service_status so we don't need these anymore
 	err = s.dbClient.ES_DeleteServicesStatus(from, to)
 	if err != nil {
-
+		return errors.Wrap(err, "failed to delete old ServiceStatus records")
 	}
 
 	return nil
