@@ -1,16 +1,16 @@
 package main
 
-
 import (
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-	"github.com/spf13/cobra"
 	"github.com/exmonitor/exclient"
 	"github.com/exmonitor/exclient/database"
 	"github.com/exmonitor/exlogger"
+	"github.com/spf13/cobra"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/exmonitor/aligator/service"
 )
 
 var Flags struct {
@@ -31,8 +31,9 @@ var Flags struct {
 	MariaPassword     string
 
 	// other
-	TimeProfiling bool
-	Debug         bool
+	LoopIntervalSec int
+	TimeProfiling   bool
+	Debug           bool
 }
 
 var flags = Flags
@@ -64,6 +65,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVarP(&flags.MariaPassword, "maria-password", "", "", "Set Maria database password that will be used for connection.")
 
 	// other
+	rootCmd.PersistentFlags().IntVarP(&flags.LoopIntervalSec, "interval", "i", 300, "Define interval in sec how often will main loop be executed.")
 	rootCmd.PersistentFlags().BoolVarP(&flags.Debug, "debug", "v", false, "Enable or disable more verbose log.")
 	rootCmd.PersistentFlags().BoolVarP(&flags.TimeProfiling, "time-profiling", "", false, "Enable or disable time profiling.")
 
@@ -97,7 +99,9 @@ func mainExecute(cmd *cobra.Command, args []string) {
 	if err != nil {
 		panic(err)
 	}
-	defer logger.CloseLogs()
+	if flags.LogToFile {
+		defer logger.CloseLogs()
+	}
 
 	// database client connection
 	var dbClient database.ClientInterface
@@ -129,9 +133,22 @@ func mainExecute(cmd *cobra.Command, args []string) {
 	// also make sure to close log files before exiting
 	catchOSSignals(logger, dbClient)
 
+	var mainService *service.Service
+	{
+		mainServiceConfig := service.Config{
+			DBClient:        dbClient,
+			LoopIntervalSec: flags.LoopIntervalSec,
+			Logger:          logger,
+			TimeProfiling:   flags.TimeProfiling,
+		}
+		mainService, err = service.New(mainServiceConfig)
+		if err != nil {
+			fmt.Printf("Failed to create mainService.\n")
+			panic(err)
+		}
+	}
 
-	logger.Log("Main thread sleeping forever ....")
-	select {}
+	mainService.Boot()
 }
 
 // catch Interrupt (Ctrl^C) or SIGTERM and exit
@@ -148,7 +165,7 @@ func catchOSSignals(l *exlogger.Logger, dbClient database.ClientInterface) {
 		// close db client
 		dbClient.Close()
 
-		fmt.Printf("\n>> Caught signal %s, exiting ...\n\n", s.String())
+		fmt.Printf("\n\n >> Caught signal '%s', exiting ...\n\n", s.String())
 		os.Exit(1)
 	}()
 }
