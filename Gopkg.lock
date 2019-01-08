@@ -5,10 +5,10 @@
   branch = "master"
   name = "github.com/exmonitor/chronos"
   packages = ["."]
-  revision = "8dad47e096318a02828f2990802a45781946bcf9"
+  revision = "61f1c9cece4f2e6a7aa1d38f29e88046fda432a2"
 
 [[projects]]
-  branch = "master"
+  branch = "add-more-es-functions"
   name = "github.com/exmonitor/exclient"
   packages = [
     ".",
@@ -20,7 +20,7 @@
     "database/spec/service",
     "database/spec/status"
   ]
-  revision = "0817cab2bbfa371dd010b06b5be6ad4087939e57"
+  revision = "45ec3a1d6b8edb1773ccd076a078c5c97cfedd77"
 
 [[projects]]
   branch = "master"
@@ -88,6 +88,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "96deb69ffa772230371ce6a02773238588c5d862a41c7e546c60dcaf34ecdee9"
+  inputs-digest = "9597506fbb4546558c093511d522ac97cae6cfc23b539b079840ff5d6a81c238"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -26,7 +26,7 @@
 
 
 [[constraint]]
-  branch = "master"
+  branch = "add-more-es-functions"
   name = "github.com/exmonitor/exclient"
 
 [[constraint]]
