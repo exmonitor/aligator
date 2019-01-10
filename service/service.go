@@ -53,7 +53,7 @@ type Service struct {
 // make sure that the Loop is executed only once every x seconds defined in loopIntervalSec
 func (s *Service) Boot() {
 
-	s.logger.Log("booting main loop")
+	s.logger.Log("booting main loop, aggregation interval %ds", s.loopIntervalSec)
 
 	// run tick goroutine
 	tickChan := make(chan bool)
@@ -126,9 +126,11 @@ func (s *Service) mainLoop() error {
 		// insert the last aggregated record at the start of the array
 		toAgregate = append([]*status.AgregatedServiceStatus{lastAggregatedRecord}, toAgregate...)
 
+		t1 := chronos.New()
 		// finally do the data aggregation
 		aggregatedStatusArray := agregator.AggregateStatuses(toAgregate)
-		s.logger.Log("aggregated %d records into %d", len(toAgregate), len(aggregatedStatusArray))
+		t1.Finish()
+		s.logger.Log("aggregated %d records into %d in %s", len(toAgregate), len(aggregatedStatusArray), t1.StringMilisec())
 
 		// save aggregated data back to db
 		for _, item := range aggregatedStatusArray {
