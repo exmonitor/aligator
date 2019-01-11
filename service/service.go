@@ -130,7 +130,7 @@ func (s *Service) mainLoop() error {
 		// finally do the data aggregation
 		aggregatedStatusArray := agregator.AggregateStatuses(toAgregate)
 		t1.Finish()
-		s.logger.Log("aggregated %d records into %d in %s", len(toAgregate), len(aggregatedStatusArray), t1.StringMilisec())
+		s.logger.Log("aggregated %d records into %d in %sms", len(toAgregate), len(aggregatedStatusArray), t1.StringMilisec())
 
 		// save aggregated data back to db
 		for _, item := range aggregatedStatusArray {
