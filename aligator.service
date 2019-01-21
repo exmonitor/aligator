@@ -5,15 +5,15 @@ Description=aligator
 EnvironmentFile=/opt/alertea/config
 ExecStart=/bin/bash -c '\
         /opt/alertea/aligator/aligator \
-        --log-to-file=${ALIGATOR_LOG_TO_FILE} \
-        --log-file=${ALIGATOR_LOG_FILE} \
-        --log-error-file=${ALIGATOR_LOG_ERROR_FILE} \
+        --log-to-file="${ALIGATOR_LOG_TO_FILE}" \
+        --log-file="${ALIGATOR_LOG_FILE}" \
+        --log-error-file="${ALIGATOR_LOG_ERROR_FILE}" \
         --db-driver="${DB_DRIVER}" \
         --maria-user="${MARIA_USER}" \
         --maria-password="${MARIA_PASSWORD}" \
         --maria-database-name="${MARIA_DB}" \
         --debug \
-        --time-profiling
+        --time-profiling'
 ExecStop=/bin/bash -c 'pkill aligator'
 
 
